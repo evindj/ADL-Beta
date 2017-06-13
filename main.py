@@ -11,8 +11,26 @@ def load_vgg(sess, vgg_path):
     :param vgg_path: Path to vgg folder, containing "variables/" and "saved_model.pb"
     :return: Tuple of Tensors from VGG model (image_input, keep_prob, layer3_out, layer4_out, layer3_out)
     """
-    # TODO: Implement function
-    return None, None, None, None, None
+    # Load the VGG-16 model in the default graph
+    
+    tf.saved_model.loader.load(sess, ['vgg16'], vgg_path)
+    # Access the graph
+    print("The list of operations")
+    for op in sess.graph.get_operations():
+        print(op.name)
+        print(op.values())
+
+
+    # Retrieve VGG inputs
+    image = sess.graph.get_tensor_by_name('image_input:0')
+    l3 = sess.graph.get_tensor_by_name('layer3_out:0')
+    l4 = sess.graph.get_tensor_by_name('layer4_out:0')
+    l7 = sess.graph.get_tensor_by_name('layer7_out:0')
+    keep = sess.graph.get_tensor_by_name('keep_prob:0')
+   
+    return image, keep,l3, l4, l7
+
+
 tests.test_load_vgg(load_vgg, tf)
 
 
@@ -27,7 +45,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     # TODO: Implement function
     return None
-tests.test_layers(layers)
+#tests.test_layers(layers)
 
 
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
@@ -41,7 +59,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
     # TODO: Implement function
     return None, None, None
-tests.test_optimize(optimize)
+#tests.test_optimize(optimize)
 
 
 def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
@@ -61,7 +79,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     """
     # TODO: Implement function
     pass
-tests.test_train_nn(train_nn)
+#tests.test_train_nn(train_nn)
 
 
 def run():
@@ -92,6 +110,7 @@ def run():
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
 
-
+"""
 if __name__ == '__main__':
     run()
+"""
