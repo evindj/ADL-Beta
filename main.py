@@ -2,6 +2,7 @@ import os.path
 import tensorflow as tf
 import helper
 import project_tests as tests
+import tensorflow.contrib.slim as slim
 
 
 def load_vgg(sess, vgg_path):
@@ -12,7 +13,7 @@ def load_vgg(sess, vgg_path):
     :return: Tuple of Tensors from VGG model (image_input, keep_prob, layer3_out, layer4_out, layer3_out)
     """
     # Load the VGG-16 model in the default graph
-    
+
     tf.saved_model.loader.load(sess, ['vgg16'], vgg_path)
     # Access the graph
     print("The list of operations")
@@ -27,12 +28,17 @@ def load_vgg(sess, vgg_path):
     l4 = sess.graph.get_tensor_by_name('layer4_out:0')
     l7 = sess.graph.get_tensor_by_name('layer7_out:0')
     keep = sess.graph.get_tensor_by_name('keep_prob:0')
-   
+
     return image, keep,l3, l4, l7
 
 
 tests.test_load_vgg(load_vgg, tf)
 
+def skip_layer(layer):
+    one = slim.conv2d(layer)
+    relu = tf.nn.relu(one)
+    skip_layer = tf.add(layer,relu)
+    return tf.nn.relu(skip_layer);
 
 def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
@@ -43,9 +49,15 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    # TODO: Implement function
-    return None
-#tests.test_layers(layers)
+    skip_vgg_3 = skip_layer(vgg_layer3_out)
+    interim = tf.mul(skip_vgg_3,vgg_layer4_out)
+    skip_vgg_4 = skip_layer(interm)
+    interim = tf.mul(skip_vgg_4,vgg_layer7_out)
+    output = slim.fully_connected(interim, num_classes, activation_fn=tf.nn.softmax)
+
+    return output
+
+tests.test_layers(layers)
 
 
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
