@@ -34,11 +34,11 @@ def load_vgg(sess, vgg_path):
 
 tests.test_load_vgg(load_vgg, tf)
 
-def skip_layer(layer):
-    one = slim.conv2d(layer)
+def skip_layer(layer,output):
+    one = slim.conv2d(layer,output,[3,3])
     relu = tf.nn.relu(one)
     skip_layer = tf.add(layer,relu)
-    return tf.nn.relu(skip_layer);
+    return tf.nn.relu(skip_layer)
 
 def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
@@ -48,11 +48,13 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param vgg_layer3_out: TF Tensor for VGG Layer 7 output
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
+    NOT SURE HOW TO HANDLE THE SHAPES OF THE SKIP CONNECTIONS.
+   
     """
-    skip_vgg_3 = skip_layer(vgg_layer3_out)
-    interim = tf.mul(skip_vgg_3,vgg_layer4_out)
-    skip_vgg_4 = skip_layer(interm)
-    interim = tf.mul(skip_vgg_4,vgg_layer7_out)
+    skip_vgg_3 = skip_layer(vgg_layer3_out,256)
+    interim = tf.matmul(skip_vgg_3,vgg_layer4_out)
+    skip_vgg_4 = skip_layer(interim,512)
+    interim = tf.matmul(skip_vgg_4,vgg_layer7_out)
     output = slim.fully_connected(interim, num_classes, activation_fn=tf.nn.softmax)
 
     return output
@@ -69,9 +71,21 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :param num_classes: Number of classes to classify
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
+    logits = slim.fully_connected(nn_last_layer, num_classes, activation_fn=tf.nn.sigmoid)
+    print(logits.shape)
+    print(correct_label.shape)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+      labels=correct_label, logits=logits, name='xentropy')
+    cross_entropy_loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
+
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+    
+    global_step = tf.Variable(0, name='global_step', trainable=False)
+    train_op = optimizer.minimize(loss, global_step=global_step)
+   
     # TODO: Implement function
-    return None, None, None
-#tests.test_optimize(optimize)
+    return logits, train_op, cross_entropy_loss
+tests.test_optimize(optimize)
 
 
 def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
