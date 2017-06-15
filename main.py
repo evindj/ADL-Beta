@@ -49,7 +49,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     NOT SURE HOW TO HANDLE THE SHAPES OF THE SKIP CONNECTIONS.
-   
+
     """
     skip_vgg_3 = skip_layer(vgg_layer3_out,256)
     interim = tf.matmul(skip_vgg_3,vgg_layer4_out)
@@ -79,10 +79,10 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     cross_entropy_loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
 
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-    
+
     global_step = tf.Variable(0, name='global_step', trainable=False)
-    train_op = optimizer.minimize(loss, global_step=global_step)
-   
+    train_op = optimizer.minimize(cross_entropy_loss, global_step=global_step)
+
     # TODO: Implement function
     return logits, train_op, cross_entropy_loss
 tests.test_optimize(optimize)
@@ -103,6 +103,11 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
+    for i in  range(epochs):
+        batches = get_batches_fn(batch_size)
+        for batch in batches:
+            train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: keep_prob})
+
     # TODO: Implement function
     pass
 #tests.test_train_nn(train_nn)
